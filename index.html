@@ -3,14 +3,23 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Perdus dans les Catacombes — V13</title>
+<title>Perdus dans les Catacombes — V14</title>
 <style>
 :root{--ink:#efe7d2;--muted:#aaa38e;--gold:#d6ad58;--line:#4b4636}
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%;background:radial-gradient(circle at 50% 0,#171711 0,#0a0a08 45%,#040404 100%);
 color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
 body{display:flex;align-items:center;justify-content:center;padding:8px}
-.shell{width:min(100%,1140px)}
+.shell{width:min(100%,1280px);transition:width .2s ease}
+.shell.zoom-view{width:min(100%,1500px)}
+.shell.zoom-view .stage{overflow:auto}
+.shell.zoom-view canvas{width:135%;max-width:none}
+.shell:fullscreen{width:100vw;max-width:none;height:100vh;padding:6px;display:flex;flex-direction:column;background:#050504}
+.shell:fullscreen .header{display:none}
+.shell:fullscreen .hud{margin-top:0}
+.shell:fullscreen .stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;overflow:auto}
+.shell:fullscreen canvas{width:auto;height:100%;max-width:100%;max-height:100%;aspect-ratio:1120/680}
+.shell:fullscreen .foot{display:none}
 .header{display:flex;align-items:end;justify-content:space-between;gap:14px;margin:0 4px 8px}
 .logo{font-family:Georgia,serif;font-weight:900;letter-spacing:.055em;font-size:clamp(21px,4vw,36px)}
 .kicker{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#8f8877}
@@ -18,7 +27,7 @@ body{display:flex;align-items:center;justify-content:center;padding:8px}
 .card{background:rgba(18,18,14,.9);border:1px solid #343126;border-radius:11px;padding:7px 9px;min-width:0}
 .card b{display:block;color:#8f8878;font-size:10px;letter-spacing:.11em;text-transform:uppercase}
 .card span{display:block;font-weight:800;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.stage{position:relative}
+.stage{position:relative;overflow:hidden}
 canvas{display:block;width:100%;height:auto;aspect-ratio:16/10;border-radius:15px;border:1px solid var(--line);
 background:#010101;box-shadow:0 20px 70px rgba(0,0,0,.6);image-rendering:pixelated;touch-action:none}
 .overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:18px;
@@ -53,6 +62,9 @@ padding:11px 18px;border-radius:12px;font-weight:900;cursor:pointer}
 .invbar{display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin:6px 0 0;padding:0 4px}
 .inv{background:rgba(18,18,14,.85);border:1px solid #3d392c;border-radius:999px;padding:4px 9px;font-size:11px;color:#d9cfb3}
 .controls{display:grid;grid-template-columns:62px 62px 62px 110px;grid-template-rows:52px 52px;gap:6px;justify-content:center;margin-top:5px}
+.actionrow{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:7px 0 2px}
+.quickbtn{border:1px solid #565143;background:linear-gradient(#23231e,#151511);color:#efe8d4;border-radius:12px;font-weight:900;font-size:12px;padding:9px 13px;touch-action:manipulation;cursor:pointer}
+.quickbtn:active{background:#3b382c}
 .ctrl{border:1px solid #565143;background:linear-gradient(#23231e,#151511);color:#efe8d4;border-radius:13px;font-weight:900;font-size:22px;touch-action:manipulation}
 .ctrl:active{background:#3b382c}
 #up{grid-column:2;grid-row:1}#left{grid-column:1;grid-row:2}#down{grid-column:2;grid-row:2}
@@ -117,7 +129,7 @@ padding:11px 13px;font:700 16px system-ui;text-align:center;outline:none}
 <div class="shell">
   <div class="header">
     <div><div class="kicker">Exploration · pouvoirs de meneur · poursuite</div><div class="logo">PERDUS DANS LES CATACOMBES</div></div>
-    <div class="kicker">V13</div>
+    <div class="kicker">V14</div>
   </div>
 
   <div class="hud">
@@ -136,6 +148,10 @@ padding:11px 13px;font:700 16px system-ui;text-align:center;outline:none}
   <div id="message">L'histoire va commencer. Ton score pourra rejoindre le Hall of Fame partagé.</div>
   <div id="dialogue"></div>
   <div class="invbar" id="invbar"></div>
+  <div class="actionrow">
+    <button class="quickbtn" id="fullscreenBtn">⛶ PLEIN ÉCRAN</button>
+    <button class="quickbtn" id="zoomBtn">🔎 CASES +</button>
+  </div>
 
   <div class="controls">
     <button class="ctrl" id="up">▲</button>
@@ -151,6 +167,7 @@ padding:11px 13px;font:700 16px system-ui;text-align:center;outline:none}
 (() => {
 "use strict";
 const canvas=document.getElementById("game"),ctx=canvas.getContext("2d");
+const shell=document.querySelector(".shell");
 ctx.imageSmoothingEnabled=false;
 const chapterEl=document.getElementById("chapter"),leaderHud=document.getElementById("leaderHud"),
 teamHud=document.getElementById("teamHud"),goalHud=document.getElementById("goalHud"),
@@ -771,6 +788,23 @@ function render(){
  requestAnimationFrame(render)
 }
 
+function updateViewButtons(){
+ const fs=document.getElementById("fullscreenBtn"),z=document.getElementById("zoomBtn");
+ if(fs)fs.textContent=document.fullscreenElement?"⛶ QUITTER LE PLEIN ÉCRAN":"⛶ PLEIN ÉCRAN";
+ if(z)z.textContent=shell.classList.contains("zoom-view")?"🔎 CASES NORMALES":"🔎 CASES +";
+}
+async function toggleFullscreen(){
+ try{
+  if(document.fullscreenElement)await document.exitFullscreen();
+  else await shell.requestFullscreen();
+ }catch(e){}
+ updateViewButtons();
+}
+function toggleZoom(){
+ shell.classList.toggle("zoom-view");
+ updateViewButtons();
+}
+
 /* controls */
 window.addEventListener("keydown",e=>{
  const k=e.key.toLowerCase();
@@ -781,8 +815,11 @@ window.addEventListener("keydown",e=>{
 },{passive:false});
 [["up",0,-1],["down",0,1],["left",-1,0],["right",1,0]].forEach(([id,dx,dy])=>document.getElementById(id).addEventListener("pointerdown",e=>{e.preventDefault();move(dx,dy)}));
 document.getElementById("switch").addEventListener("pointerdown",e=>{e.preventDefault();switchLeader()});
+document.getElementById("fullscreenBtn").addEventListener("click",toggleFullscreen);
+document.getElementById("zoomBtn").addEventListener("click",toggleZoom);
+document.addEventListener("fullscreenchange",updateViewButtons);
 
-showStory(0);updateHUD();render();
+showStory(0);updateHUD();updateViewButtons();render();
 })();
 </script>
 </body>
