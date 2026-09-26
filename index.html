@@ -1,0 +1,775 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Perdus dans les Catacombes — V11</title>
+<style>
+:root{--ink:#efe7d2;--muted:#aaa38e;--gold:#d6ad58;--line:#4b4636}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:radial-gradient(circle at 50% 0,#171711 0,#0a0a08 45%,#040404 100%);
+color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+body{display:flex;align-items:center;justify-content:center;padding:8px}
+.shell{width:min(100%,1140px)}
+.header{display:flex;align-items:end;justify-content:space-between;gap:14px;margin:0 4px 8px}
+.logo{font-family:Georgia,serif;font-weight:900;letter-spacing:.055em;font-size:clamp(21px,4vw,36px)}
+.kicker{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#8f8877}
+.hud{display:grid;grid-template-columns:1fr 1.1fr 1fr 1fr 1fr;gap:6px;margin:0 4px 8px}
+.card{background:rgba(18,18,14,.9);border:1px solid #343126;border-radius:11px;padding:7px 9px;min-width:0}
+.card b{display:block;color:#8f8878;font-size:10px;letter-spacing:.11em;text-transform:uppercase}
+.card span{display:block;font-weight:800;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stage{position:relative}
+canvas{display:block;width:100%;height:auto;aspect-ratio:16/10;border-radius:15px;border:1px solid var(--line);
+background:#010101;box-shadow:0 20px 70px rgba(0,0,0,.6);image-rendering:pixelated;touch-action:none}
+.overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:18px;
+background:linear-gradient(rgba(0,0,0,.42),rgba(0,0,0,.78));border-radius:15px}
+.panel{width:min(94%,820px);background:rgba(10,10,8,.96);border:1px solid #5d5745;border-radius:16px;
+padding:24px;text-align:center;box-shadow:0 18px 80px rgba(0,0,0,.65)}
+.panel h1{font-family:Georgia,serif;font-size:clamp(28px,7vw,55px);line-height:.96;margin:5px 0 10px}
+.panel h2{font-family:Georgia,serif;font-size:clamp(24px,5vw,38px);margin:5px 0 8px}
+.panel p{color:#c9c0a8;line-height:1.5;max-width:700px;margin:10px auto 17px}
+.tags,.row{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:10px 0 18px}
+.tag{border:1px solid #4b4739;background:#151510;border-radius:999px;padding:4px 8px;color:#b9b19c;font-size:11px}
+.btn{border:1px solid #756b4f;background:linear-gradient(#302b1d,#1e1b14);color:#ffefb7;
+padding:11px 18px;border-radius:12px;font-weight:900;cursor:pointer}
+.btn.alt{background:#151510;color:#c8bea2}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.choice{width:min(31%,210px);min-width:155px;border:1px solid #5f5a49;border-radius:14px;padding:14px 11px;background:#171610;cursor:pointer}
+.choice strong{display:block;font-size:18px;margin-bottom:4px}
+.choice small{color:#bcae88;line-height:1.35;display:block}
+.choice.selected{outline:2px solid var(--gold);background:#242017}
+.portrait{height:64px;display:flex;align-items:center;justify-content:center;margin-bottom:4px}
+.pix{width:38px;height:50px;position:relative;image-rendering:pixelated}
+.pix .head{position:absolute;left:10px;top:5px;width:18px;height:14px;background:#d7af88}
+.pix .hair{position:absolute;left:9px;top:2px;width:20px;height:7px;background:#222}
+.pix .body{position:absolute;left:7px;top:19px;width:24px;height:22px}
+.pix .leg1,.pix .leg2{position:absolute;top:40px;width:8px;height:9px;background:#111}
+.pix .leg1{left:8px}.pix .leg2{right:8px}
+.pix.kiki .body{background:#efd05f}.pix.kiki .hair{background:#161616}
+.pix.erwan .body{background:#59b5d9}.pix.erwan .hair{background:#6b482f}
+.pix.martoz .body{background:#b987e6}.pix.martoz .hair{background:#2e2721}
+#message{min-height:27px;margin:8px 4px 4px;text-align:center;font-weight:800;color:#eee3c2}
+#dialogue{min-height:22px;text-align:center;color:#c8b98a;font-style:italic;font-size:13px;margin-bottom:4px}
+.invbar{display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin:6px 0 0;padding:0 4px}
+.inv{background:rgba(18,18,14,.85);border:1px solid #3d392c;border-radius:999px;padding:4px 9px;font-size:11px;color:#d9cfb3}
+.controls{display:grid;grid-template-columns:62px 62px 62px 110px;grid-template-rows:52px 52px;gap:6px;justify-content:center;margin-top:5px}
+.ctrl{border:1px solid #565143;background:linear-gradient(#23231e,#151511);color:#efe8d4;border-radius:13px;font-weight:900;font-size:22px;touch-action:manipulation}
+.ctrl:active{background:#3b382c}
+#up{grid-column:2;grid-row:1}#left{grid-column:1;grid-row:2}#down{grid-column:2;grid-row:2}
+#right{grid-column:3;grid-row:2}#switch{grid-column:4;grid-row:1/span 2;font-size:11px;line-height:1.25}
+.foot{text-align:center;color:#706b5c;font-size:11px;margin-top:6px}
+.namebox{width:min(100%,360px);margin:12px auto}
+.namebox label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.14em;color:#9d947d;margin-bottom:6px}
+.namebox input{width:100%;border:1px solid #625c49;border-radius:12px;background:#12120f;color:#f5eccf;
+padding:11px 13px;font:700 16px system-ui;text-align:center;outline:none}
+.namebox input:focus{border-color:#d6ad58;box-shadow:0 0 0 2px rgba(214,173,88,.15)}
+.hof{width:min(100%,620px);margin:12px auto;border-collapse:collapse;font-size:13px}
+.hof th,.hof td{padding:8px 9px;border-bottom:1px solid #393529;text-align:left}
+.hof th{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#9f977f}
+.hof td:first-child,.hof th:first-child{text-align:center;width:50px}
+.hof td:last-child,.hof th:last-child{text-align:right}
+.hof tr:first-child td{color:#ffe79c;font-weight:900}
+.hof-empty{padding:22px;color:#aaa18b}
+.online-status{display:inline-block;margin:4px auto 8px;padding:4px 9px;border:1px solid #4b4739;border-radius:999px;font-size:11px;color:#b9b19c;background:#151510}
+.online-status.ok{color:#bfe0ad;border-color:#506447}
+.online-status.off{color:#dfbd9e;border-color:#6a5140}
+.highscore-screen{position:relative;overflow:hidden}
+.highscore-title{
+  font-family:Impact,Haettenschweiler,"Arial Narrow Bold",sans-serif;
+  font-size:clamp(34px,8vw,72px);
+  letter-spacing:.06em;
+  color:#ffe66e;
+  text-shadow:0 0 8px rgba(255,230,110,.75),0 0 22px rgba(255,179,58,.35);
+  animation:hsPulse .75s infinite alternate;
+  margin:8px 0 4px
+}
+.highscore-name{
+  font-size:clamp(26px,6vw,48px);
+  font-weight:900;
+  letter-spacing:.08em;
+  color:#fff;
+  animation:nameFlash .55s steps(2,end) infinite;
+  margin:4px 0
+}
+.highscore-rank{
+  font-size:clamp(24px,5vw,42px);
+  font-weight:900;
+  margin:6px 0
+}
+.scanline{
+  position:absolute;left:0;right:0;height:3px;top:-5px;
+  background:rgba(255,255,255,.16);
+  animation:scan 1.6s linear infinite;
+  pointer-events:none
+}
+@keyframes hsPulse{from{transform:scale(1);opacity:.86}to{transform:scale(1.045);opacity:1}}
+@keyframes nameFlash{0%,45%{opacity:1}46%,100%{opacity:.5}}
+@keyframes scan{from{top:-5px}to{top:100%}}
+@media(max-width:780px){
+ body{padding:4px}.hud{grid-template-columns:1fr 1fr 1fr}.header .kicker{display:none}
+ .controls{grid-template-columns:56px 56px 56px 92px;grid-template-rows:48px 48px}
+ .panel{padding:18px 12px}.choice{min-width:135px;width:30%}
+}
+@media(max-width:520px){.choice{width:100%;min-width:0}.hud{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="header">
+    <div><div class="kicker">Exploration · pouvoirs de meneur · poursuite</div><div class="logo">PERDUS DANS LES CATACOMBES</div></div>
+    <div class="kicker">V11</div>
+  </div>
+
+  <div class="hud">
+    <div class="card"><b>Chapitre</b><span id="chapter">Prologue</span></div>
+    <div class="card"><b>Meneur / pouvoir</b><span id="leaderHud">—</span></div>
+    <div class="card"><b>Équipe</b><span id="teamHud">Kiki · Erwan · Martoz</span></div>
+    <div class="card"><b>Objectif</b><span id="goalHud">Retrouver Adibou</span></div>
+    <div class="card"><b>Salles</b><span id="roomsHud">0 / 8</span></div>
+  </div>
+
+  <div class="stage">
+    <canvas id="game" width="1120" height="680"></canvas>
+    <div class="overlay" id="overlay"><div class="panel" id="panel"></div></div>
+  </div>
+
+  <div id="message">L'histoire va commencer. Ton score pourra rejoindre le Hall of Fame partagé.</div>
+  <div id="dialogue"></div>
+  <div class="invbar" id="invbar"></div>
+
+  <div class="controls">
+    <button class="ctrl" id="up">▲</button>
+    <button class="ctrl" id="left">◀</button>
+    <button class="ctrl" id="down">▼</button>
+    <button class="ctrl" id="right">▶</button>
+    <button class="ctrl" id="switch">CHANGER<br>DE MENEUR<br><span style="opacity:.6">M</span></button>
+  </div>
+  <div class="foot">Flèches / ZQSD / WASD · M : changer de meneur · P : pause · R : recommencer</div>
+</div>
+
+<script>
+(() => {
+"use strict";
+const canvas=document.getElementById("game"),ctx=canvas.getContext("2d");
+ctx.imageSmoothingEnabled=false;
+const chapterEl=document.getElementById("chapter"),leaderHud=document.getElementById("leaderHud"),
+teamHud=document.getElementById("teamHud"),goalHud=document.getElementById("goalHud"),
+roomsHud=document.getElementById("roomsHud"),messageEl=document.getElementById("message"),
+dialogueEl=document.getElementById("dialogue"),invbar=document.getElementById("invbar"),
+overlay=document.getElementById("overlay"),panel=document.getElementById("panel");
+
+const TILE=40,COLS=28,ROWS=17,W=1120,H=680;
+const OUTSIDE=[
+"############################","#....#......#...............#","#....#......#..######.......#",
+"#....####.###..#............#","#..............#..####......#","####.######.####..#.........#",
+"#....#.............#........#","#.####..#####..#####........#","#.......#...#...............#",
+"#.#####.#.#.######.#####....#","#.....#...#......#..........#","###.#.#####.####.#.######...#",
+"#...#.......#....#..........#","#S..#########..............E#","############################",
+"############################","############################"];
+const CATAS=[
+"############################","#S....#..........#.........#","###.#.#.########.#.######..#",
+"#...#.#....#.....#......#..#","#.###.####.#.##########.#..#","#...#......#......#.....#..#",
+"#.#.########.####.#.####...#","#.#....#.....#....#........#","#.####.#.#####.##########..#",
+"#......#.....#.......#.....#","######.#####.#######.#.###.#","#......#...#.......#.#...#.#",
+"#.######.#.#####.#.#.###.#.#","#........#.....#.#...#...#.#","#.############.#.#####.###.#",
+"#..............#.........#F#","############################"];
+
+const COLORS={Kiki:"#efd05f",Erwan:"#59b5d9",Martoz:"#b987e6",Adibou:"#67cf7e"};
+const ABILITIES={
+ Kiki:{short:"Éclaireur",desc:"Quand Kiki mène, son faisceau éclaire nettement plus loin."},
+ Erwan:{short:"Protecteur",desc:"Pendant la poursuite, Erwan peut repousser une première capture s'il mène."},
+ Martoz:{short:"Cavaleur",desc:"Quand Martoz mène la fuite, Gus et Mitch progressent moins vite."}
+};
+const ROOMS=[
+{id:"fac",x:1,y:13,w:8,h:3,cx:4,cy:14,name:"PORTE DE LA FAC",type:"fac",msg:"Vous entrez dans la Porte de la Fac.",dlg:"Kiki : « La porte de la fac… ça fait un vrai repère. »"},
+{id:"bunker",x:8,y:11,w:6,h:3,cx:10,cy:12,name:"LE BUNKER",type:"bunker",msg:"Vous entrez dans le Bunker.",dlg:"Erwan : « Un bunker... on pourrait y trouver du matos. »"},
+{id:"plage",x:20,y:6,w:6,h:4,cx:22,cy:7,name:"LA PLAGE",type:"plage",msg:"Vous entrez dans la Plage.",dlg:"Martoz : « Une plage sous terre ? Je veux une photo. »"},
+{id:"ossuaire",x:13,y:5,w:5,h:3,cx:15,cy:6,name:"L'OSSUAIRE",type:"ossuaire",msg:"Vous pénétrez dans l’Ossuaire.",dlg:"Erwan : « Des os partout... gardons nos repères. »"},
+{id:"puits",x:1,y:9,w:6,h:3,cx:3,cy:10,name:"SALLE DU PUITS",type:"puits",msg:"Vous entrez dans la Salle du Puits.",dlg:"Kiki : « Faites silence… le puits renvoie l’écho. »"},
+{id:"effondree",x:1,y:5,w:5,h:3,cx:2,cy:6,name:"GALERIE EFFONDRÉE",type:"effondree",msg:"Vous atteignez la Galerie Effondrée.",dlg:"Martoz : « Ça a glissé ici… attention où vous mettez les pieds. »"},
+{id:"squat",x:20,y:11,w:5,h:3,cx:22,cy:12,name:"LE SQUAT",type:"squat",msg:"Vous entrez dans le Squat.",dlg:"Martoz : « Une vieille planque… il reste des trucs utiles. »"},
+{id:"temple",x:18,y:1,w:9,h:3,cx:22,cy:2,name:"LE TEMPLE",type:"temple",msg:"Vous entrez dans le Temple.",dlg:"Erwan : « C’est presque solennel ici. »"}
+];
+const EVENTS=[
+{text:"Un murmure résonne derrière le mur…",dlg:"Kiki : « Vous avez entendu ça ? »"},
+{text:"Un courant d'air froid traverse la galerie.",dlg:"Erwan : « Ça souffle… il y a peut-être une sortie pas loin. »"},
+{text:"Un amas d'ossements bloque presque le passage.",dlg:"Martoz : « Sympa l'ambiance… »"},
+{text:"Des traces fraîches apparaissent sur la pierre.",dlg:"Kiki : « Adibou est peut-être passé par là. »"},
+{text:"Un grésillement lointain traverse les galeries.",dlg:"Martoz : « C'était une radio, ça ? »"}
+];
+
+let map=[],discovered=[],team=[],cops=[],level=0,started=false,gameState="title",paused=false;
+let entrance=null,friendSpot=null,exitSpot=null,leaderIndex=0,steps=0,glitch=0,frozenInput=0,copClock=0;
+let eventTiles=new Map(),visitedEvents=new Set(),discoveredRooms=new Set(),enteredRooms=new Set(),usedRooms=new Set();
+let minimap=false,visionBonus=0,exitHint=false,adibouPulse=0,smokeBomb=0,templeBlessing=false,templeSlow=0;
+let shortcut=false,debris=false,rescues=0,score=0,selectedLeader=null,erwanGuard=true;
+let particles=[],ripple=0,audioCtx=null,endFrame=0,endShown=false;
+let playerName="",scoreSaved=false;
+const HOF_KEY="perdus_catacombes_hall_of_fame_v9_backup";
+const SUPABASE_URL="https://yjudyoihvmfvunvkmbtu.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY="sb_publishable_ElM2fDRqtESnArx3ymqTJA_s1XeUcpr";
+const LEADERBOARD_TABLE="catacombes_leaderboard";
+
+function beep(freq=220,dur=.06,type="square",gain=.025){
+ try{
+  if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+  if(audioCtx.state==="suspended")audioCtx.resume();
+  const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=type;o.frequency.value=freq;g.gain.value=gain;
+  o.connect(g);g.connect(audioCtx.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+dur);o.stop(audioCtx.currentTime+dur);
+ }catch(e){}
+}
+function parse(a){return a.map(r=>r.split(""))}
+function find(ch){for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++)if(map[y][x]===ch)return{x,y};return null}
+function walk(x,y){return x>=0&&y>=0&&x<COLS&&y<ROWS&&map[y][x]!=="#"}
+function hash(x,y,n=0){const v=Math.sin(x*127.1+y*311.7+n*73.3)*43758.5453;return v-Math.floor(v)}
+function person(name,x,y){return{name,x,y,active:true,color:COLORS[name]}}
+function active(){return team.filter(p=>p.active)}
+function leader(){const a=active();if(!a.length)return null;leaderIndex=((leaderIndex%a.length)+a.length)%a.length;return a[leaderIndex]}
+function setLeader(name){const a=active(),i=a.findIndex(p=>p.name===name);if(i>=0)leaderIndex=i}
+function roomAt(x,y){return ROOMS.find(r=>x>=r.x&&x<r.x+r.w&&y>=r.y&&y<r.y+r.h)||null}
+function say(m,d=""){messageEl.textContent=m;dialogueEl.textContent=d}
+function abilityVision(){return leader()?.name==="Kiki"?.85:0}
+function updateScore(){score=Math.max(0,discoveredRooms.size*200+visitedEvents.size*60+rescues*300+(shortcut?400:0)+active().length*120-steps*2)}
+
+function updateHUD(){
+ chapterEl.textContent=level===1?"I · L'entrée":level===2?"II · Les galeries":level===3?"III · La chasse":"Prologue";
+ const l=leader(); leaderHud.textContent=l?`${l.name} · ${ABILITIES[l.name]?.short||""}`:(selectedLeader?`${selectedLeader} · ${ABILITIES[selectedLeader].short}`:"—");
+ teamHud.textContent=level===3?`${active().length}/${team.length} mobiles`:(level?team.map(p=>p.name).join(" · "):"Kiki · Erwan · Martoz");
+ goalHud.textContent=level===1?"Trouver l'accès":level===2?"Retrouver Adibou":level===3?"Revenir à la surface":"Retrouver Adibou";
+ roomsHud.textContent=level>=2?`${discoveredRooms.size} / ${ROOMS.length}`:"0 / 8";
+ updateInventory(); updateScore();
+}
+function updateInventory(){
+ const a=[];
+ const l=leader();
+ if(l)a.push(`⭐ ${l.name}: ${ABILITIES[l.name].short}`);
+ if(minimap)a.push("🗺️ mini-plan");
+ if(visionBonus)a.push("🔋 batterie");
+ if(exitHint)a.push("✏️ craie");
+ if(smokeBomb)a.push("💨 fumigène");
+ if(templeBlessing||templeSlow)a.push("✨ temple");
+ if(shortcut)a.push("🕳️ raccourci");
+ if(level===3&&erwanGuard)a.push("🛡️ garde d'Erwan");
+ invbar.innerHTML=a.map(x=>`<span class="inv">${x}</span>`).join("");
+}
+function reveal(base){
+ const r=base+visionBonus+abilityVision();
+ for(const p of active())for(let dy=-6;dy<=6;dy++)for(let dx=-6;dx<=6;dx++){
+  if(dx*dx+dy*dy<=r*r){const x=p.x+dx,y=p.y+dy;if(x>=0&&y>=0&&x<COLS&&y<ROWS)discovered[y][x]=true}
+ }
+ for(const rm of ROOMS){
+  let v=false;
+  for(let y=rm.y;y<rm.y+rm.h;y++)for(let x=rm.x;x<rm.x+rm.w;x++)if(discovered[y]?.[x]&&walk(x,y))v=true;
+  if(v)discoveredRooms.add(rm.id);
+ }
+ updateHUD();
+}
+function resetFlags(){
+ discoveredRooms.clear();enteredRooms.clear();usedRooms.clear();visitedEvents.clear();eventTiles.clear();
+ minimap=false;visionBonus=0;exitHint=false;adibouPulse=0;smokeBomb=0;templeBlessing=false;templeSlow=0;
+ shortcut=false;debris=false;rescues=0;score=0;erwanGuard=true;particles=[];ripple=0;
+}
+function placeEvents(){
+ const c=[];
+ for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++)if(walk(x,y)&&!roomAt(x,y)&&hash(x,y,15)>.87)c.push({x,y});
+ c.slice(0,10).forEach((p,i)=>eventTiles.set(`${p.x},${p.y}`,EVENTS[i%EVENTS.length]));
+}
+function initLevel1(){
+ level=1;gameState="play";paused=false;steps=0;cops=[];glitch=0;frozenInput=0;scoreSaved=false;resetFlags();
+ map=parse(OUTSIDE);const s=find("S");entrance=find("E");map[s.y][s.x]=".";map[entrance.y][entrance.x]=".";
+ team=[person("Kiki",s.x,s.y),person("Erwan",s.x,s.y),person("Martoz",s.x,s.y)];
+ discovered=Array.from({length:ROWS},()=>Array(COLS).fill(false));setLeader(selectedLeader||"Kiki");reveal(3.3);
+ say("Trouve l'entrée des catacombes.",`${leader().name} : « Je passe devant. Suivez-moi. »`);
+}
+function initLevel2(){
+ level=2;gameState="play";paused=false;steps=0;cops=[];glitch=0;frozenInput=24;resetFlags();
+ map=parse(CATAS);const s=find("S");friendSpot=find("F");map[s.y][s.x]=".";map[friendSpot.y][friendSpot.x]=".";exitSpot={x:s.x,y:s.y};
+ team=[person("Kiki",s.x,s.y),person("Erwan",s.x,s.y),person("Martoz",s.x,s.y)];
+ discovered=Array.from({length:ROWS},()=>Array(COLS).fill(false));setLeader(selectedLeader||"Kiki");placeEvents();reveal(2.7);
+ say("Explore les galeries et retrouve Adibou.","Erwan : « Mémorisez les salles. On devra peut-être fuir par ici. »");
+ beep(145,.16,"sine",.024);
+}
+function startEscape(){
+ level=3;gameState="play";glitch=150;frozenInput=150;copClock=0;erwanGuard=true;
+ const x=friendSpot.x,y=friendSpot.y;
+ team.forEach((p,i)=>{p.x=x-(i%2);p.y=y-Math.floor(i/2)});
+ team.push(person("Adibou",x,y));setLeader(selectedLeader||"Kiki");
+ cops=[{name:"Gus",x:1,y:1,color:"#d94a43",kind:"hunter"},{name:"Mitch",x:26,y:1,color:"#ea7b47",kind:"interceptor"}];
+ if(templeBlessing)templeSlow=18;
+ say("Gus et Mitch sont entrés dans le réseau. Retour à la surface !","Adibou : « Vous êtes venus… maintenant faut foncer. »");
+ updateHUD();beep(92,.45,"sawtooth",.04);
+}
+
+function switchLeader(){
+ const a=active();if(a.length<2||level===0||paused)return;
+ leaderIndex=(leaderIndex+1)%a.length;
+ say(`${a[leaderIndex].name} passe devant.`,`${a[leaderIndex].name} : « Je prends la tête. »`);
+ updateHUD();beep(430,.04,"square",.02);
+}
+function bump(){ripple=8;beep(78,.04,"triangle",.014)}
+function move(dx,dy){
+ if(!started||gameState!=="play"||paused||frozenInput>0||glitch>0)return;
+ const l=leader();if(!l)return;const nx=l.x+dx,ny=l.y+dy;if(!walk(nx,ny)){bump();return}
+ const a=active(),old=new Map(a.map(p=>[p,{x:p.x,y:p.y}])),order=[l,...a.filter(p=>p!==l)];
+ l.x=nx;l.y=ny;
+ for(let i=1;i<order.length;i++){const t=old.get(order[i-1])||old.get(l);order[i].x=t.x;order[i].y=t.y}
+ steps++;reveal(level===1?3.3:2.7);checkRoom();checkEvent();objective();
+ if(steps%2===0)beep(level===1?112:84,.025,"triangle",.009);
+ if(level===3&&gameState==="play"){
+  captureCheck();
+  if(gameState==="play"){
+   copClock++;
+   let div=leader()?.name==="Martoz"?3:2;
+   if(templeSlow>0){div++;templeSlow--}
+   if(copClock%div===0)moveCops();
+   captureCheck();rescueCheck();checkExit();copTalk();
+  }
+ }
+ updateHUD();
+}
+function useRoom(r){
+ if(usedRooms.has(r.id))return;usedRooms.add(r.id);
+ if(r.id==="fac"){minimap=true;say("Un vieux plan griffonné débloque le mini-plan.","Kiki : « Ça, c'est précieux. »")}
+ else if(r.id==="bunker"){visionBonus=.5;say("Une batterie trouvée dans le Bunker améliore les lampes.","Erwan : « On verra plus loin. »")}
+ else if(r.id==="plage"){unlockShortcut()}
+ else if(r.id==="ossuaire"){exitHint=true;say("Vous posez des marques de craie pour le retour.","Erwan : « On balise le chemin. »")}
+ else if(r.id==="puits"){adibouPulse=220;say("L'écho du puits révèle la direction d'Adibou.","Kiki : « Je l'ai ! Tout au fond. »")}
+ else if(r.id==="effondree"){debris=true;[[4,7],[5,7],[6,7]].forEach(([x,y])=>map[y][x]=".");say("Des gravats cèdent : un passage secondaire s'ouvre.","Martoz : « Voilà une voie de secours. »")}
+ else if(r.id==="squat"){smokeBomb=1;say("Vous récupérez un fumigène dans le Squat.","Martoz : « Celui-là, on le garde pour Gus et Mitch. »")}
+ else if(r.id==="temple"){templeBlessing=true;say("Le Temple vous donne un bonus de calme pour le début de la fuite.","Erwan : « On garde la tête froide. »")}
+ updateHUD();
+}
+function unlockShortcut(){
+ if(shortcut)return;shortcut=true;
+ [[19,11],[21,11],[21,10],[21,9]].forEach(([x,y])=>{map[y][x]=".";discovered[y][x]=true});
+ say("Un passage secret relie la Plage et le Bunker !","Kiki : « Retenez ce raccourci. Il peut nous sauver. »");
+ beep(650,.1,"sine",.03);
+}
+function checkRoom(){
+ if(level<2)return;const l=leader(),r=roomAt(l.x,l.y);
+ if(r&&!enteredRooms.has(r.id)){enteredRooms.add(r.id);say(r.msg,r.dlg);beep(300+enteredRooms.size*45,.08,"sine",.02);setTimeout(()=>useRoom(r),180)}
+}
+function checkEvent(){
+ if(level<2)return;const l=leader(),k=`${l.x},${l.y}`;
+ if(eventTiles.has(k)&&!visitedEvents.has(k)){visitedEvents.add(k);const e=eventTiles.get(k);say(e.text,e.dlg);beep(250+visitedEvents.size*18,.07,"sine",.018)}
+}
+function objective(){
+ const l=leader();if(!l)return;
+ if(level===1&&l.x===entrance.x&&l.y===entrance.y){
+  gameState="transition";say("Une grille, un escalier… l'entrée est trouvée.","Martoz : « Bon. Maintenant, on descend. »");
+  beep(520,.08,"sine",.03);setTimeout(initLevel2,850)
+ }else if(level===2&&l.x===friendSpot.x&&l.y===friendSpot.y){
+  gameState="transition";say("Adibou est retrouvé.","Adibou : « Enfin ! J'ai cru que j'allais rester ici… »");
+  beep(660,.12,"sine",.035);setTimeout(startEscape,1100)
+ }
+}
+function neigh(x,y){return[[1,0],[-1,0],[0,1],[0,-1]].map(([dx,dy])=>({x:x+dx,y:y+dy})).filter(p=>walk(p.x,p.y))}
+function key(p){return`${p.x},${p.y}`}
+function bfs(s,t){
+ if(s.x===t.x&&s.y===t.y)return s;const q=[s],seen=new Set([key(s)]),prev=new Map();let i=0;
+ while(i<q.length){const c=q[i++];if(c.x===t.x&&c.y===t.y)break;for(const n of neigh(c.x,c.y)){const k=key(n);if(seen.has(k))continue;seen.add(k);prev.set(k,c);q.push(n)}}
+ if(!seen.has(key(t)))return s;let c=t;while(prev.has(key(c))){const p=prev.get(key(c));if(p.x===s.x&&p.y===s.y)return c;c=p}return s
+}
+function nearest(c){let b=null,d=1e9;for(const p of active()){const x=Math.abs(c.x-p.x)+Math.abs(c.y-p.y);if(x<d){d=x;b=p}}return b}
+function cutTarget(){
+ const l=leader();if(!l)return exitSpot;let x=l.x,y=l.y;
+ for(let i=0;i<5;i++){const sx=Math.sign(exitSpot.x-x),sy=Math.sign(exitSpot.y-y);if(walk(x+sx,y))x+=sx;else if(walk(x,y+sy))y+=sy}
+ return{x,y}
+}
+function moveCops(){for(const c of cops){const t=c.kind==="hunter"?nearest(c):cutTarget();if(t){const s=bfs({x:c.x,y:c.y},t);c.x=s.x;c.y=s.y}}}
+function captureCheck(){
+ for(const p of [...active()]){
+  const c=cops.find(c=>c.x===p.x&&c.y===p.y);if(!c)continue;
+  if(leader()?.name==="Erwan"&&erwanGuard){
+   erwanGuard=false;
+   const r=neigh(c.x,c.y).find(n=>!active().some(q=>q.x===n.x&&q.y===n.y));
+   if(r){c.x=r.x;c.y=r.y}
+   say("Erwan repousse la première tentative de capture !","Erwan : « Pas cette fois ! »");
+   beep(210,.12,"square",.035);updateHUD();continue;
+  }
+  p.active=false;leaderIndex=0;say(`${p.name} est attrapé par ${c.name} !`,`${c.name} : « Terminé pour toi. »`);beep(65,.22,"sawtooth",.045)
+ }
+ if(!active().length){gameState="lost";showEnd(false)}
+}
+function rescueCheck(){
+ for(const f of team.filter(p=>!p.active)){
+  if(active().some(p=>p.x===f.x&&p.y===f.y)&&!cops.some(c=>c.x===f.x&&c.y===f.y)){
+   f.active=true;rescues++;say(`${f.name} est libéré !`,`${f.name} : « Bien vu… on continue ! »`);beep(760,.08,"sine",.035)
+  }
+ }
+ if(smokeBomb&&cops.some(c=>active().some(p=>Math.abs(p.x-c.x)+Math.abs(p.y-c.y)<=2))){
+  smokeBomb=0;templeSlow=Math.max(templeSlow,9);say("Le fumigène ralentit Gus et Mitch !","Martoz : « Maintenant, on trace ! »")
+ }
+}
+function checkExit(){
+ const l=leader();if(l&&team.every(p=>p.active)&&l.x===exitSpot.x&&l.y===exitSpot.y){
+  gameState="ending";endFrame=0;endShown=false;say("La sortie ! Les quatre remontent vers la surface.","Adibou : « On y est ! »");beep(820,.12,"sine",.04)
+ }
+}
+function copTalk(){if(steps%10)return;const q=["Gus : « Ils sont par là. »","Mitch : « Coupe la sortie. »","Gus : « Je les entends. »","Mitch : « Ils vont revenir vers l'entrée. »"];dialogueEl.textContent=q[(steps/10)%q.length|0]}
+
+
+function getHall(){
+ try{
+  const v=JSON.parse(localStorage.getItem(HOF_KEY)||"[]");
+  return Array.isArray(v)?v:[];
+ }catch(e){return[]}
+}
+function setHall(entries){
+ try{localStorage.setItem(HOF_KEY,JSON.stringify(entries));}catch(e){}
+}
+function saveLocalBackup(entry){
+ const hall=getHall();
+ hall.push(entry);
+ hall.sort((a,b)=>b.score-a.score);
+ setHall(hall.slice(0,10));
+}
+async function fetchOnlineHall(){
+ const url=`${SUPABASE_URL}/rest/v1/${LEADERBOARD_TABLE}?select=id,player_name,score,leader,created_at&order=score.desc,created_at.asc&limit=10`;
+ const r=await fetch(url,{
+  method:"GET",
+  headers:{
+   "apikey":SUPABASE_PUBLISHABLE_KEY,
+   "Accept":"application/json"
+  }
+ });
+ if(!r.ok)throw new Error(`Leaderboard GET ${r.status}`);
+ const data=await r.json();
+ return data.map(x=>({
+  id:x.id,
+  name:x.player_name,
+  score:Number(x.score)||0,
+  leader:x.leader||"",
+  created_at:x.created_at,
+  date:x.created_at?new Date(x.created_at).toLocaleDateString("fr-FR"):"—"
+ }));
+}
+async function submitOnlineScore(){
+ if(scoreSaved||!playerName.trim())return {ok:false,id:null,duplicate:true};
+ scoreSaved=true;
+ updateScore();
+ const entry={
+  name:playerName.trim().slice(0,20),
+  score:Math.round(score),
+  leader:selectedLeader||leader()?.name||"Kiki",
+  steps:Math.max(0,Math.min(10000,Math.round(steps))),
+  rooms:Math.max(0,Math.min(8,discoveredRooms.size)),
+  rescues:Math.max(0,Math.min(20,rescues)),
+  shortcut_found:!!shortcut
+ };
+ const localEntry={name:entry.name,score:entry.score,leader:entry.leader,date:new Date().toLocaleDateString("fr-FR")};
+ saveLocalBackup(localEntry);
+ try{
+  const r=await fetch(`${SUPABASE_URL}/rest/v1/${LEADERBOARD_TABLE}`,{
+   method:"POST",
+   headers:{
+    "apikey":SUPABASE_PUBLISHABLE_KEY,
+    "Content-Type":"application/json",
+    "Prefer":"return=representation"
+   },
+   body:JSON.stringify({
+    player_name:entry.name,
+    score:entry.score,
+    leader:entry.leader,
+    steps:entry.steps,
+    rooms:entry.rooms,
+    rescues:entry.rescues,
+    shortcut_found:entry.shortcut_found
+   })
+  });
+  if(!r.ok)throw new Error(`Leaderboard POST ${r.status}`);
+  const rows=await r.json();
+  return {ok:true,id:rows?.[0]?.id||null};
+ }catch(e){
+  return {ok:false,id:null};
+ }
+}
+function escapeHtml(s){
+ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+function medalForRank(rank){
+ if(rank===1)return "🥇";
+ if(rank===2)return "🥈";
+ if(rank===3)return "🥉";
+ return "";
+}
+function ordinalFr(rank){
+ return rank===1?"1er":`${rank}e`;
+}
+function rankingMessage(rank){
+ if(rank===1)return "🥇 NOUVEAU RECORD ! Tu prends la 1re place du Hall of Fame.";
+ if(rank===2)return "🥈 Énorme ! Tu prends la 2e place du Hall of Fame.";
+ if(rank===3)return "🥉 Podium ! Tu prends la 3e place du Hall of Fame.";
+ if(rank&&rank<=10)return `⭐ ${ordinalFr(rank)} meilleur score du Hall of Fame !`;
+ return "Score enregistré, mais il n'entre pas encore dans le Top 10.";
+}
+
+async function showHallOfFame(){
+ overlay.style.display="flex";
+ panel.innerHTML=`<div class="kicker">Les légendes des souterrains</div>
+ <h1>HALL OF FAME</h1>
+ <div class="online-status">Connexion au classement mondial…</div>
+ <table class="hof"><thead><tr><th>#</th><th>Joueur</th><th>Leader</th><th>Date</th><th>Score</th></tr></thead>
+ <tbody><tr><td colspan="5" class="hof-empty">Chargement…</td></tr></tbody></table>
+ <div class="row"><button class="btn" id="hofBack">RETOUR</button></div>`;
+ document.getElementById("hofBack").onclick=()=>showLeaderChoice();
+ let hall=[],online=true;
+ try{
+  hall=await fetchOnlineHall();
+ }catch(e){
+  online=false;
+  hall=getHall().map(x=>({...x,leader:x.leader||"—"}));
+ }
+ const status=panel.querySelector(".online-status");
+ status.textContent=online?"🌐 Classement partagé Supabase":"📱 Hors connexion : classement local de secours";
+ status.className=`online-status ${online?"ok":"off"}`;
+ const tbody=panel.querySelector("tbody");
+ tbody.innerHTML=hall.length?hall.slice(0,10).map((e,i)=>`<tr>
+  <td>${i<3?medalForRank(i+1):i+1}</td>
+  <td>${escapeHtml(e.name)}</td>
+  <td>${escapeHtml(e.leader||"—")}</td>
+  <td>${escapeHtml(e.date||"—")}</td>
+  <td><b>${Number(e.score).toLocaleString("fr-FR")}</b></td>
+ </tr>`).join(""):`<tr><td colspan="5" class="hof-empty">Aucun score enregistré pour l'instant.</td></tr>`;
+}
+function togglePause(){
+ if(!started||gameState!=="play")return;paused=!paused;
+ if(paused){overlay.style.display="flex";panel.innerHTML=`<div class="kicker">Pause</div><h1>PAUSE</h1><p>Meneur : <b>${leader()?.name}</b> — ${ABILITIES[leader()?.name]?.desc||""}</p><div class="tags"><span class="tag">Score ${score}</span><span class="tag">${discoveredRooms.size} salles</span></div><button class="btn" id="resume">REPRENDRE</button>`;document.getElementById("resume").onclick=togglePause}
+ else overlay.style.display="none"
+}
+
+function showHighScoreSplash(rank, onContinue){
+ overlay.style.display="flex";
+ const medal=medalForRank(rank);
+ panel.innerHTML=`<div class="highscore-screen">
+   <div class="scanline"></div>
+   <div class="kicker">Hall of Fame</div>
+   <div class="highscore-title">NEW HIGH SCORE!</div>
+   <div class="highscore-name">${escapeHtml(playerName)}</div>
+   <div class="highscore-rank">${medal?medal+" ":""}${ordinalFr(rank)} PLACE</div>
+   <p><b>${score.toLocaleString("fr-FR")} points</b></p>
+   <div class="tags"><span class="tag">${selectedLeader||leader()?.name||"Kiki"} en meneur</span><span class="tag">${discoveredRooms.size}/8 salles</span><span class="tag">${rescues} sauvetages</span></div>
+   <button class="btn" id="hsContinue">CONTINUER</button>
+ </div>`;
+ beep(rank===1?980:rank===2?860:760,.14,"square",.04);
+ setTimeout(()=>beep(rank===1?1240:1080,.12,"sine",.035),150);
+ document.getElementById("hsContinue").onclick=onContinue;
+}
+
+async function showEnd(win){
+ updateScore();
+ let saveResult={ok:false,id:null};
+ let rank=null;
+ if(win){
+   saveResult=await submitOnlineScore();
+   if(saveResult.ok){
+     try{
+       const hall=await fetchOnlineHall();
+       if(saveResult.id)rank=hall.findIndex(x=>x.id===saveResult.id)+1;
+       if(rank===0)rank=null;
+     }catch(e){}
+   }
+ }
+
+ const renderFinal=()=>{
+   overlay.style.display="flex";
+   const rankLine=win&&saveResult.ok?rankingMessage(rank):"";
+   const rankBadge=rank?`${medalForRank(rank)} ${ordinalFr(rank)} place`.trim():"";
+   panel.innerHTML=`<div class="kicker">${win?"Surface retrouvée":"Fin de la fuite"}</div>
+   <h1>${win?"LES QUATRE SONT DEHORS":"TOUS ATTRAPÉS"}</h1>
+   <p>${win?`<b>${escapeHtml(playerName)}</b> termine avec <b>${score.toLocaleString("fr-FR")} points</b>. ${saveResult.ok?"Le score a été envoyé au Hall of Fame partagé.":"La connexion au classement a échoué : le score a été gardé localement."}`:"Gus et Mitch ont immobilisé toute l'équipe. Les salles, pouvoirs et raccourcis peuvent changer la prochaine tentative."}</p>
+   ${win?`<div class="online-status ${saveResult.ok?"ok":"off"}">${saveResult.ok?"🌐 Score enregistré en ligne":"📱 Score sauvegardé localement"}</div>`:""}
+   ${win&&saveResult.ok?`<h2 style="margin:12px 0 5px">${rankBadge||"CLASSEMENT MIS À JOUR"}</h2><p style="margin-top:4px"><b>${rankLine}</b></p>`:""}
+   <div class="tags"><span class="tag">Score ${score.toLocaleString("fr-FR")}</span><span class="tag">${steps} déplacements</span><span class="tag">${discoveredRooms.size}/8 salles</span><span class="tag">${rescues} sauvetages</span><span class="tag">${shortcut?"raccourci trouvé":"raccourci manqué"}</span></div>
+   <div class="row">
+     <button class="btn" id="again">NOUVELLE PARTIE</button>
+     <button class="btn alt" id="endHall">HALL OF FAME</button>
+   </div>`;
+   document.getElementById("again").onclick=()=>showStory(0);
+   document.getElementById("endHall").onclick=()=>showHallOfFame();
+ };
+
+ if(win&&saveResult.ok&&rank&&rank<=10){
+   showHighScoreSplash(rank,renderFinal);
+ }else{
+   renderFinal();
+ }
+}
+
+/* INTRO */
+const stories=[
+ {k:"Dernier message reçu",t:"ADIBOU A DISPARU",p:"Adibou est descendu seul dans les catacombes. Son dernier message est incomplet : quelques mots, du bruit, puis plus rien. Kiki, Erwan et Martoz décident de partir à sa recherche."},
+ {k:"Trois amis descendent",t:"LE RÉSEAU EST IMMENSE",p:"Ils ne connaissent pas la carte. Leur lumière révèle seulement les galeries proches. Les salles rencontrées deviennent leurs repères : le Bunker, la Plage, la Porte de la Fac, l'Ossuaire, le Puits, le Squat, le Temple…"}
+];
+function showStory(i){
+ started=false;level=0;gameState="title";paused=false;overlay.style.display="flex";messageEl.textContent="";dialogueEl.textContent="";invbar.innerHTML="";
+ if(i<stories.length){
+  const s=stories[i];panel.innerHTML=`<div class="kicker">${s.k}</div><h1>${s.t}</h1><p>${s.p}</p><div class="row"><button class="btn" id="next">SUITE</button><button class="btn alt" id="skip">CHOISIR LE MENEUR</button><button class="btn alt" id="storyHall">HALL OF FAME</button></div>`;
+  document.getElementById("next").onclick=()=>showStory(i+1);document.getElementById("skip").onclick=showLeaderChoice;document.getElementById("storyHall").onclick=showHallOfFame
+ }else showLeaderChoice()
+}
+function portrait(n){
+ const c=n.toLowerCase();return `<div class="portrait"><div class="pix ${c}"><span class="hair"></span><span class="head"></span><span class="body"></span><span class="leg1"></span><span class="leg2"></span></div></div>`
+}
+function showLeaderChoice(){
+ overlay.style.display="flex";
+ panel.innerHTML=`<div class="kicker">Avant de descendre</div><h2>QUI PASSE DEVANT ?</h2>
+ <p>Entre ton nom, puis choisis le meneur de départ. Le Hall of Fame partagé conservera les <b>10 meilleurs scores de tous les joueurs</b>. En cas de Top 10, un écran arcade « NEW HIGH SCORE! » s'affichera avec ton nom, ta place et une médaille pour le podium.</p>
+ <div class="namebox">
+   <label for="playerNameInput">Nom du joueur</label>
+   <input id="playerNameInput" maxlength="20" autocomplete="nickname" placeholder="Ex. Adibou" value="${escapeHtml(playerName)}">
+ </div>
+ <div class="row">
+  ${["Kiki","Erwan","Martoz"].map(n=>`<div class="choice ${selectedLeader===n?"selected":""}" data-name="${n}">${portrait(n)}<strong>${n}</strong><small><b>${ABILITIES[n].short}</b><br>${ABILITIES[n].desc}</small></div>`).join("")}
+ </div>
+ <div class="row">
+   <button class="btn" id="launch" ${selectedLeader&&playerName.trim()?"":"disabled"}>COMMENCER L'EXPÉDITION</button>
+   <button class="btn alt" id="openHall">HALL OF FAME</button>
+ </div>`;
+ const input=document.getElementById("playerNameInput");
+ const launch=document.getElementById("launch");
+ input.addEventListener("input",()=>{
+   playerName=input.value;
+   launch.disabled=!(selectedLeader&&playerName.trim());
+ });
+ [...panel.querySelectorAll(".choice")].forEach(n=>n.onclick=()=>{
+   playerName=input.value;
+   selectedLeader=n.dataset.name;
+   showLeaderChoice();
+ });
+ launch.onclick=()=>{
+   playerName=input.value.trim();
+   if(selectedLeader&&playerName){
+     started=true;overlay.style.display="none";initLevel1();beep(330,.08,"square",.03);
+   }
+ };
+ document.getElementById("openHall").onclick=()=>{
+   playerName=input.value;
+   showHallOfFame();
+ };
+}
+
+/* DRAW */
+function drawWall(x,y){
+ const px=x*TILE,py=y*TILE;ctx.fillStyle=level>=2?"#181611":"#232622";ctx.fillRect(px,py,TILE,TILE);
+ if(level>=2){ctx.fillStyle=hash(x,y)>.5?"#2c2922":"#24221d";ctx.fillRect(px+2,py+2,TILE-4,TILE-4);ctx.strokeStyle="#3c372e";ctx.beginPath();ctx.moveTo(px+3,py+11);ctx.lineTo(px+TILE-4,py+7+hash(x,y,1)*11);ctx.stroke()}
+ else{ctx.fillStyle="#373b35";ctx.fillRect(px+2,py+2,TILE-4,TILE-4)}
+}
+function drawRoom(r,x,y){
+ const px=x*TILE,py=y*TILE;
+ const base={fac:"#3a3430",bunker:"#394437",plage:"#c2a965",ossuaire:"#3a342c",puits:"#2e2d31",effondree:"#4a3f36",squat:"#3c312c",temple:"#343238"}[r.type];
+ ctx.fillStyle=base;ctx.fillRect(px+2,py+2,TILE-4,TILE-4);
+ if(r.type==="plage"){ctx.fillStyle="#5794a6";ctx.fillRect(px+2,py+30,TILE-4,8)}
+ if(r.type==="ossuaire"){ctx.strokeStyle="#b1a88a";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(px+8,py+28);ctx.lineTo(px+27,py+11);ctx.stroke()}
+ if(r.type==="puits"&&x===r.x+2&&y===r.y+1){ctx.fillStyle="#090909";ctx.beginPath();ctx.arc(px+20,py+20,11,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#777";ctx.stroke()}
+ if(r.type==="squat"){ctx.fillStyle="#8b473b";ctx.fillRect(px+5,py+23,16,7);ctx.fillStyle="#c87d34";ctx.fillRect(px+25,py+10,5,16)}
+ if(r.type==="temple"){ctx.fillStyle="#d0b768";ctx.fillRect(px+18,py+8,4,22)}
+ if(r.type==="bunker"&&hash(x,y,2)>.72){ctx.fillStyle="#657061";ctx.fillRect(px+9,py+10,11,10)}
+ if(r.type==="effondree"&&hash(x,y,5)>.45){ctx.fillStyle="#746457";ctx.fillRect(px+9,py+20,12,8)}
+ if(r.type==="fac"&&x===r.x+4&&y===r.y+1){ctx.fillStyle="#4b3425";ctx.fillRect(px+8,py+5,24,28);ctx.strokeStyle="#b99d76";ctx.strokeRect(px+8,py+5,24,28)}
+}
+function drawFloor(x,y){
+ const r=roomAt(x,y),px=x*TILE,py=y*TILE;if(r){drawRoom(r,x,y);return}
+ ctx.fillStyle=level>=2?"#28241d":"#2b302a";ctx.fillRect(px,py,TILE,TILE);
+ if(level>=2){ctx.fillStyle=hash(x,y,4)>.7?"#302a21":"#24211b";ctx.fillRect(px+2,py+2,TILE-4,TILE-4);if(hash(x,y,7)>.9){ctx.fillStyle="rgba(58,74,72,.3)";ctx.beginPath();ctx.ellipse(px+20,py+25,13,5,0,0,Math.PI*2);ctx.fill()}}
+}
+function drawLabels(){
+ if(level<2)return;ctx.textAlign="center";
+ for(const r of ROOMS)if(discoveredRooms.has(r.id)){const x=r.cx*TILE+20,y=r.cy*TILE+8;ctx.fillStyle="rgba(0,0,0,.48)";ctx.fillRect(x-58,y-10,116,14);ctx.fillStyle="#f1dfaa";ctx.font="bold 8px monospace";ctx.fillText(r.name,x,y)}
+}
+function spriteAt(name,cx,cy,scale=1,alpha=1){
+ ctx.save();ctx.globalAlpha=alpha;ctx.translate(cx,cy);ctx.scale(scale,scale);
+ const body=COLORS[name]||"#ccc",hair=name==="Erwan"?"#6b482f":name==="Martoz"?"#2e2721":name==="Kiki"?"#181818":"#392b20";
+ ctx.fillStyle=body+"33";ctx.beginPath();ctx.arc(0,0,17,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle="#171717";ctx.fillRect(-10,-2,20,17);ctx.fillStyle=body;ctx.fillRect(-8,0,16,14);
+ ctx.fillStyle="#d7af88";ctx.fillRect(-7,-13,14,11);ctx.fillStyle=hair;ctx.fillRect(-8,-16,16,5);
+ if(name==="Kiki"){ctx.fillStyle="#efd05f";ctx.fillRect(-9,-17,18,3)}
+ if(name==="Erwan"){ctx.fillStyle="#394f63";ctx.fillRect(-9,5,18,4)}
+ if(name==="Martoz"){ctx.fillStyle="#ddd";ctx.fillRect(-6,-9,4,2);ctx.fillRect(2,-9,4,2)}
+ if(name==="Adibou"){ctx.fillStyle="#263926";ctx.fillRect(-8,-16,16,3)}
+ ctx.fillStyle="#f7e89d";ctx.fillRect(5,-10,4,3);
+ ctx.fillStyle="#0d0d0d";ctx.fillRect(-8,14,6,6);ctx.fillRect(2,14,6,6);ctx.restore()
+}
+function drawPerson(p,lost=false){spriteAt(p.name,p.x*TILE+20,p.y*TILE+20,1,p.active?1:.38);if(!p.active){const x=p.x*TILE+20,y=p.y*TILE+20;ctx.strokeStyle="#d74b43";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x-11,y-11);ctx.lineTo(x+11,y+11);ctx.moveTo(x+11,y-11);ctx.lineTo(x-11,y+11);ctx.stroke()}if(lost){ctx.fillStyle="#f3df9f";ctx.font="bold 10px system-ui";ctx.textAlign="center";ctx.fillText("ADIBOU",p.x*TILE+20,p.y*TILE+1)}}
+function drawCop(c){
+ const x=c.x*TILE+20,y=c.y*TILE+20;ctx.save();ctx.translate(x,y);
+ ctx.fillStyle="rgba(185,45,40,.18)";ctx.beginPath();ctx.arc(0,0,18,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle="#1e2731";ctx.fillRect(-10,-2,20,17);ctx.fillStyle="#d3a679";ctx.fillRect(-7,-13,14,11);
+ ctx.fillStyle="#242b34";ctx.fillRect(-9,-17,18,6);ctx.fillStyle="#c5cbd0";ctx.fillRect(-3,-19,6,3);
+ ctx.fillStyle=c.color;ctx.fillRect(-9,5,18,3);ctx.fillStyle="#111";ctx.fillRect(-8,15,6,6);ctx.fillRect(2,15,6,6);ctx.restore();
+ ctx.fillStyle="#d7d1c2";ctx.font="bold 9px system-ui";ctx.textAlign="center";ctx.fillText(c.name.toUpperCase(),x,y-23)
+}
+function drawWorld(){
+ for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){if(!discovered[y][x]){ctx.fillStyle="#010101";ctx.fillRect(x*TILE,y*TILE,TILE,TILE);continue}map[y][x]==="#"?drawWall(x,y):drawFloor(x,y)}
+ drawLabels();
+ if(level===1&&discovered[entrance.y][entrance.x]){const x=entrance.x*TILE+20,y=entrance.y*TILE+20;ctx.fillStyle="#080808";ctx.beginPath();ctx.ellipse(x,y,15,10,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#a38f61";ctx.lineWidth=3;ctx.stroke()}
+ if(level===2&&discovered[friendSpot.y][friendSpot.x])drawPerson(person("Adibou",friendSpot.x,friendSpot.y),true);
+ if(level===3&&discovered[exitSpot.y][exitSpot.x]){const x=exitSpot.x*TILE+20,y=exitSpot.y*TILE+20;ctx.fillStyle="rgba(216,177,83,.25)";ctx.fillRect(x-13,y-13,26,26);ctx.fillStyle="#ead788";ctx.font="bold 22px sans-serif";ctx.textAlign="center";ctx.fillText("↑",x,y+8)}
+ if(adibouPulse>0&&level===2){adibouPulse--;const x=friendSpot.x*TILE+20,y=friendSpot.y*TILE+20;ctx.strokeStyle=`rgba(103,207,126,${Math.min(.6,adibouPulse/220)})`;ctx.beginPath();ctx.arc(x,y,20+(220-adibouPulse)*.35,0,Math.PI*2);ctx.stroke()}
+}
+function drawEntities(){
+ if(level===3)for(const c of cops){const vis=discovered[c.y]?.[c.x]||active().some(p=>Math.abs(p.x-c.x)+Math.abs(p.y-c.y)<=4);if(vis)drawCop(c)}
+ for(const p of team)if(discovered[p.y]?.[p.x]||p.active)drawPerson(p)
+}
+function drawFog(){
+ ctx.save();ctx.fillStyle=level===1?"rgba(2,6,5,.45)":"rgba(0,0,0,.67)";ctx.fillRect(0,0,W,H);ctx.globalCompositeOperation="destination-out";
+ for(const p of active()){const x=p.x*TILE+20,y=p.y*TILE+20,r=(level===1?150:118)+(visionBonus+abilityVision())*20;const g=ctx.createRadialGradient(x,y,18,x,y,r);g.addColorStop(0,"rgba(0,0,0,.95)");g.addColorStop(.55,"rgba(0,0,0,.62)");g.addColorStop(1,"rgba(0,0,0,0)");ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill()}
+ ctx.restore();for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++)if(!discovered[y][x]){ctx.fillStyle="#010101";ctx.fillRect(x*TILE,y*TILE,TILE,TILE)}
+}
+function drawLeader(){const l=leader();if(!l)return;const x=l.x*TILE+20,y=l.y*TILE+20;ctx.strokeStyle="#f3df9c";ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(x,y,17+Math.sin(performance.now()/170)*1.5,0,Math.PI*2);ctx.stroke()}
+function drawMini(){
+ if(!minimap||level<2)return;const mw=170,mh=120,px=W-mw-18,py=16,cw=mw/COLS,ch=mh/ROWS;ctx.fillStyle="rgba(10,10,10,.75)";ctx.fillRect(px,py,mw,mh);ctx.strokeStyle="#8d846d";ctx.strokeRect(px,py,mw,mh);
+ for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++)if(discovered[y][x]){ctx.fillStyle=map[y][x]==="#"?"#453f35":"#c9be9a";ctx.fillRect(px+x*cw,py+y*ch,Math.ceil(cw),Math.ceil(ch))}
+ for(const p of team){ctx.fillStyle=p.color;ctx.fillRect(px+p.x*cw,py+p.y*ch,3,3)}if(level===3)for(const c of cops){ctx.fillStyle=c.color;ctx.fillRect(px+c.x*cw,py+c.y*ch,3,3)}
+ ctx.fillStyle="#efe7d2";ctx.font="bold 9px monospace";ctx.fillText("MINI-PLAN",px+8,py+11)
+}
+function drawFX(){
+ if(particles.length<70)particles.push({x:Math.random()*W,y:Math.random()*H,v:.07+Math.random()*.14,a:.04+Math.random()*.09});
+ ctx.fillStyle="#ded4b9";for(const p of particles){p.y-=p.v;if(p.y<-2)p.y=H+2;ctx.globalAlpha=p.a;ctx.fillRect(p.x,p.y,1.3,1.3)}ctx.globalAlpha=1;
+ if(ripple>0){ripple--;const l=leader();if(l){ctx.strokeStyle=`rgba(255,230,150,${ripple/20})`;ctx.beginPath();ctx.arc(l.x*TILE+20,l.y*TILE+20,20+(8-ripple)*3,0,Math.PI*2);ctx.stroke()}}
+ if(level===3&&cops.some(c=>active().some(p=>Math.abs(p.x-c.x)+Math.abs(p.y-c.y)<=4))){const a=.14+.07*Math.sin(performance.now()/120),g=ctx.createRadialGradient(W/2,H/2,220,W/2,H/2,560);g.addColorStop(.45,"rgba(120,0,0,0)");g.addColorStop(1,`rgba(120,0,0,${a})`);ctx.fillStyle=g;ctx.fillRect(0,0,W,H)}
+}
+function drawGlitch(){
+ if(glitch<=0)return;glitch--;if(frozenInput>0)frozenInput--;const q=Math.max(.1,glitch/150);ctx.save();
+ for(let i=0;i<22*q+4;i++){const y=Math.random()*H,h=2+Math.random()*16;ctx.fillStyle=`rgba(${100+Math.random()*140},${20+Math.random()*35},${20+Math.random()*35},${.08+Math.random()*.22})`;ctx.fillRect((Math.random()-.5)*90*q,y,W,h)}
+ ctx.fillStyle=`rgba(0,0,0,${.18+.34*q})`;ctx.fillRect(0,0,W,H);ctx.fillStyle="#f2e6d0";ctx.font="bold 36px monospace";ctx.textAlign="center";ctx.fillText(glitch>85?"SIGNAL BROUILLÉ":"GUS + MITCH",W/2,H/2);ctx.restore()
+}
+function titleBG(){
+ ctx.fillStyle="#090a08";ctx.fillRect(0,0,W,H);for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){ctx.fillStyle=hash(x,y)>.5?"#13130f":"#0f0f0c";ctx.fillRect(x*TILE,y*TILE,TILE-1,TILE-1)}
+ ctx.fillStyle="rgba(0,0,0,.62)";ctx.fillRect(0,0,W,H);ctx.strokeStyle="#5f5842";ctx.lineWidth=5;ctx.beginPath();ctx.arc(W/2,H*.58,130,Math.PI,0);ctx.lineTo(W/2+130,H*.83);ctx.lineTo(W/2-130,H*.83);ctx.closePath();ctx.stroke()
+}
+function drawEnding(){
+ endFrame++;ctx.fillStyle="#080807";ctx.fillRect(0,0,W,H);
+ const light=Math.min(1,endFrame/220);const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,`rgba(245,223,151,${.15+.75*light})`);g.addColorStop(.28,"#39352b");g.addColorStop(1,"#0d0c0a");ctx.fillStyle=g;ctx.fillRect(W*.33,0,W*.34,H);
+ ctx.fillStyle="#1f1d18";ctx.fillRect(0,0,W*.33,H);ctx.fillRect(W*.67,0,W*.33,H);
+ const lx=W/2-26,rx=W/2+26;ctx.strokeStyle="#9a8a66";ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(lx,H);ctx.lineTo(lx,0);ctx.moveTo(rx,H);ctx.lineTo(rx,0);ctx.stroke();
+ for(let y=20;y<H;y+=36){ctx.beginPath();ctx.moveTo(lx,y);ctx.lineTo(rx,y);ctx.stroke()}
+ const p=Math.min(1,endFrame/220);["Adibou","Kiki","Erwan","Martoz"].forEach((n,i)=>{const yy=H+80+i*55-p*(H+180+i*20);spriteAt(n,W/2,yy,.9,1)});
+ if(endFrame>180){ctx.fillStyle=`rgba(255,245,205,${Math.min(1,(endFrame-180)/70)})`;ctx.font="bold 36px Georgia";ctx.textAlign="center";ctx.fillText("LA SURFACE",W/2,68)}
+ if(endFrame>270&&!endShown){endShown=true;setTimeout(()=>showEnd(true),50)}
+}
+function render(){
+ ctx.clearRect(0,0,W,H);
+ if(gameState==="ending"){drawEnding();requestAnimationFrame(render);return}
+ if(!started)titleBG();
+ else{drawWorld();drawEntities();drawFog();drawLeader();drawFX();drawMini();if(frozenInput>0&&glitch<=0)frozenInput--;drawGlitch()}
+ requestAnimationFrame(render)
+}
+
+/* controls */
+window.addEventListener("keydown",e=>{
+ const k=e.key.toLowerCase();
+ if(["arrowup","z","w"].includes(k))move(0,-1);else if(["arrowdown","s"].includes(k))move(0,1);
+ else if(["arrowleft","q","a"].includes(k))move(-1,0);else if(["arrowright","d"].includes(k))move(1,0);
+ else if(k==="m")switchLeader();else if(k==="p")togglePause();else if(k==="r"&&started){overlay.style.display="none";initLevel1()}
+ if(["arrowup","arrowdown","arrowleft","arrowright"].includes(k))e.preventDefault()
+},{passive:false});
+[["up",0,-1],["down",0,1],["left",-1,0],["right",1,0]].forEach(([id,dx,dy])=>document.getElementById(id).addEventListener("pointerdown",e=>{e.preventDefault();move(dx,dy)}));
+document.getElementById("switch").addEventListener("pointerdown",e=>{e.preventDefault();switchLeader()});
+
+showStory(0);updateHUD();render();
+})();
+</script>
+</body>
+</html>
