@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Perdus dans les Catacombes — V11</title>
+<title>Perdus dans les Catacombes — V12</title>
 <style>
 :root{--ink:#efe7d2;--muted:#aaa38e;--gold:#d6ad58;--line:#4b4636}
 *{box-sizing:border-box}
@@ -117,7 +117,7 @@ padding:11px 13px;font:700 16px system-ui;text-align:center;outline:none}
 <div class="shell">
   <div class="header">
     <div><div class="kicker">Exploration · pouvoirs de meneur · poursuite</div><div class="logo">PERDUS DANS LES CATACOMBES</div></div>
-    <div class="kicker">V11</div>
+    <div class="kicker">V12</div>
   </div>
 
   <div class="hud">
@@ -713,9 +713,25 @@ function drawEntities(){
  for(const p of team)if(discovered[p.y]?.[p.x]||p.active)drawPerson(p)
 }
 function drawFog(){
- ctx.save();ctx.fillStyle=level===1?"rgba(2,6,5,.45)":"rgba(0,0,0,.67)";ctx.fillRect(0,0,W,H);ctx.globalCompositeOperation="destination-out";
- for(const p of active()){const x=p.x*TILE+20,y=p.y*TILE+20,r=(level===1?150:118)+(visionBonus+abilityVision())*20;const g=ctx.createRadialGradient(x,y,18,x,y,r);g.addColorStop(0,"rgba(0,0,0,.95)");g.addColorStop(.55,"rgba(0,0,0,.62)");g.addColorStop(1,"rgba(0,0,0,0)");ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill()}
- ctx.restore();for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++)if(!discovered[y][x]){ctx.fillStyle="#010101";ctx.fillRect(x*TILE,y*TILE,TILE,TILE)}
+ ctx.save();
+ ctx.fillStyle=level===1?"rgba(2,6,5,.32)":"rgba(0,0,0,.52)";
+ ctx.fillRect(0,0,W,H);
+ ctx.globalCompositeOperation="destination-out";
+ for(const p of active()){
+  const x=p.x*TILE+20,y=p.y*TILE+20;
+  const r=(level===1?175:150)+(visionBonus+abilityVision())*22;
+  const g=ctx.createRadialGradient(x,y,24,x,y,r);
+  g.addColorStop(0,"rgba(0,0,0,1)");
+  g.addColorStop(.68,"rgba(0,0,0,1)");
+  g.addColorStop(.88,"rgba(0,0,0,.55)");
+  g.addColorStop(1,"rgba(0,0,0,0)");
+  ctx.fillStyle=g;
+  ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();
+ }
+ ctx.restore();
+ for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++)if(!discovered[y][x]){
+  ctx.fillStyle="#010101";ctx.fillRect(x*TILE,y*TILE,TILE,TILE)
+ }
 }
 function drawLeader(){const l=leader();if(!l)return;const x=l.x*TILE+20,y=l.y*TILE+20;ctx.strokeStyle="#f3df9c";ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(x,y,17+Math.sin(performance.now()/170)*1.5,0,Math.PI*2);ctx.stroke()}
 function drawMini(){
