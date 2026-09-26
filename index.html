@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Perdus dans les Catacombes — V14</title>
+<title>Perdus dans les Catacombes — V15</title>
 <style>
 :root{--ink:#efe7d2;--muted:#aaa38e;--gold:#d6ad58;--line:#4b4636}
 *{box-sizing:border-box}
@@ -14,12 +14,9 @@ body{display:flex;align-items:center;justify-content:center;padding:8px}
 .shell.zoom-view{width:min(100%,1500px)}
 .shell.zoom-view .stage{overflow:auto}
 .shell.zoom-view canvas{width:135%;max-width:none}
-.shell:fullscreen{width:100vw;max-width:none;height:100vh;padding:6px;display:flex;flex-direction:column;background:#050504}
-.shell:fullscreen .header{display:none}
-.shell:fullscreen .hud{margin-top:0}
-.shell:fullscreen .stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;overflow:auto}
-.shell:fullscreen canvas{width:auto;height:100%;max-width:100%;max-height:100%;aspect-ratio:1120/680}
-.shell:fullscreen .foot{display:none}
+.stage:fullscreen{width:100vw;height:100vh;max-width:none;border-radius:0;background:#050504;display:flex;align-items:center;justify-content:center;overflow:auto}
+.stage:fullscreen canvas{width:auto;height:100%;max-width:100%;max-height:100%;aspect-ratio:1120/680;border-radius:0}
+.stage:fullscreen .overlay{border-radius:0}
 .header{display:flex;align-items:end;justify-content:space-between;gap:14px;margin:0 4px 8px}
 .logo{font-family:Georgia,serif;font-weight:900;letter-spacing:.055em;font-size:clamp(21px,4vw,36px)}
 .kicker{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#8f8877}
@@ -129,7 +126,7 @@ padding:11px 13px;font:700 16px system-ui;text-align:center;outline:none}
 <div class="shell">
   <div class="header">
     <div><div class="kicker">Exploration · pouvoirs de meneur · poursuite</div><div class="logo">PERDUS DANS LES CATACOMBES</div></div>
-    <div class="kicker">V14</div>
+    <div class="kicker">V15</div>
   </div>
 
   <div class="hud">
@@ -796,7 +793,7 @@ function updateViewButtons(){
 async function toggleFullscreen(){
  try{
   if(document.fullscreenElement)await document.exitFullscreen();
-  else await shell.requestFullscreen();
+  else await document.querySelector(".stage").requestFullscreen();
  }catch(e){}
  updateViewButtons();
 }
